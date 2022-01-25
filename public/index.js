@@ -4,18 +4,19 @@ async function main() {
     const highestPriceChartCanvas = document.querySelector('#highest-price-chart');
     const averagePriceChartCanvas = document.querySelector('#average-price-chart');
    
-    let response = await fetch('https://api.twelvedata.com/time_series?symbol=GME,MSFT,DIS,BNTX&interval=1min&apikey=adfc4019eead44ad93e0c6eaeb9d6502')
-    let jsonObject = await response.json()
-    console.log(jsonObject)
+    const response = await fetch('https://api.twelvedata.com/time_series?symbol=GME,MSFT,DIS,BNTX&interval=1min&apikey=adfc4019eead44ad93e0c6eaeb9d6502')
+
+    let jsonObject = await response.json();
+    console.log(jsonObject);
 
     const { GME, MSFT, DIS, BNTX } = mockData;
 
-    const stocks = [GME, MSFT, DIS, BNTX];
+    const stocks = [ GME, MSFT, DIS, BNTX ];
+    console.log(stocks);
 
-    console.log(stocks)
+    stocks.forEach( stock => stock.values.reverse());
 
-    stocks.forEach( stock => stock.values.reverse())
-
+    // Time Chart
     new Chart(timeChartCanvas.getContext('2d'), {
         type: 'line',
         data: {
@@ -29,17 +30,46 @@ async function main() {
         }
     });
 
+    // High Chart
     new Chart(highestPriceChartCanvas.getContext('2d'), {
         type: 'bar',
-        data: stocks.map(stock => ({ { 
-            labels: stock.meta.symbol,
-            datasets: 
-                data: highestPrice(),
-                backgroundColor: getColor(stock.meta.symbol),
-                borderColor: getColor(stock.meta.symbol),
+        data: { 
+            labels: stocks.map(stock => stock.meta.symbol),
+            datasets: [{
+                label: 'Highest',
+                backgroundColor: stocks.map(stock => (
+                    getColor(stock.meta.symbol)
+                )),
+                borderColor: stocks.map(stock => (
+                    getColor(stock.meta.symbol)
+                )),
+                data: stocks.map(stock => (
+                    findHighest(stock.values)
+                ))
+            }]
+        }
+    });
+
+    //Average Chart
+    new Chart(averagePriceChartCanvas.getContext('2d'), {
+        type: 'pie',
+        data: {
+            labels: stocks.map(stock => stock.meta.symbol),
+            datasets: [{
+                label: 'Average',
+                backgroundColor: stocks.map(stock => (
+                    getColor(stock.meta.symbol)
+                )),
+                borderColor: stocks.map(stock => (
+                    getColor(stock.meta.symbol)
+                )),
+                data: stocks.map(stock => (
+                    calcAverage(stock.values)
+                ))
+            }]
         }
     })
-}
+
 
     function getColor(stock){
         if(stock === "GME"){
@@ -56,11 +86,19 @@ async function main() {
         }
     }
 
-    function highestPrice(){
-        let highestPriceArray = []
-        stock.forEach(stock => {
-            highestPriceArray.push(Math.max(stock.values.high))
+    function findHighest(values){
+        values.forEach(value => {
+            highest = Math.max(value.high) 
         })
+        return highest
+    }
+
+    function calcAverage(values){
+        let total = 0;
+        values.forEach(value => {
+            total += parseFloat(value.high)
+        })
+        return total/values.length
     }
 }
 
